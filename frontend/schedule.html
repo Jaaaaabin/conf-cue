@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schedule — ConfCue</title>
+<link rel="icon" type="image/svg+xml" href="/icon/dbp26.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="stage stage--board stage--with-nav stage--white-bg">
+  <nav class="nav-fold">
+    <button type="button" class="nav-fold__toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="7" x2="20" y2="7"></line>
+        <line x1="4" y1="12" x2="20" y2="12"></line>
+        <line x1="4" y1="17" x2="20" y2="17"></line>
+      </svg>
+    </button>
+    <div class="nav-fold__panel" id="navPanel">
+      <ul class="nav-fold__list">
+        <li><a href="/" class="nav-fold__link">Chat</a></li>
+        <li><a href="/schedule.html" class="nav-fold__link is-current">Schedule</a></li>
+        <li><a href="/sponsors.html" class="nav-fold__link">Sponsors &amp; Partners</a></li>
+        <li><a href="/venues.html" class="nav-fold__link">Venues</a></li>
+        <li><a href="/contact.html" class="nav-fold__link">Contact</a></li>
+        <li><a href="/myquestions.html" class="nav-fold__link">My Questions</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="board-header">
+    <div>
+      <p class="stub-eyebrow">ConfCue</p>
+      <h1 class="board-title">Schedule</h1>
+    </div>
+  </header>
+
+  <section class="board-feed" aria-labelledby="scheduleHeading">
+    <h2 id="scheduleHeading" class="board-feed__heading">DBP26 · Munich</h2>
+    <div id="scheduleDays"></div>
+    <p id="scheduleEmpty" class="feed-empty" hidden>Schedule not available yet.</p>
+  </section>
+
+  <script src="/nav.js"></script>
+<script>
+    const scheduleDays = document.getElementById("scheduleDays");
+    const scheduleEmpty = document.getElementById("scheduleEmpty");
+
+    function groupByDate(sessions) {
+      const byDate = new Map();
+      sessions.forEach(({ date, time, session_fullname, presenter, doi }) => {
+        if (!byDate.has(date)) byDate.set(date, []);
+        byDate.get(date).push({ time, topic: session_fullname, presenter, doi });
+      });
+      return [...byDate.entries()];
+    }
+
+    function formatDayLabel(dateStr) {
+      const date = new Date(`${dateStr}T00:00:00`);
+      return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    }
+
+    function buildSessionCard({ time, topic, presenter, doi }) {
+      const li = document.createElement("li");
+      li.className = "session-card";
+
+      const timeEl = document.createElement("p");
+      timeEl.className = "session-card__time";
+      timeEl.textContent = time;
+
+      const topicEl = document.createElement("p");
+      topicEl.className = "session-card__topic";
+      topicEl.textContent = topic;
+
+      li.append(timeEl, topicEl);
+
+      if (presenter) {
+        const presenterEl = document.createElement("p");
+        presenterEl.className = "session-card__presenter";
+        presenterEl.textContent = presenter;
+        li.append(presenterEl);
+      }
+
+      if (doi) {
+        const link = document.createElement("a");
+        link.className = "session-card__doi";
+        link.href = `https://doi.org/${doi}`;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = `doi.org/${doi}`;
+        li.append(link);
+      }
+      return li;
+    }
+
+    function togglePanel(panel, header, open) {
+      const willOpen = open !== undefined ? open : panel.style.maxHeight === "0px" || !panel.style.maxHeight;
+      header.setAttribute("aria-expanded", String(willOpen));
+      panel.style.maxHeight = willOpen ? `${panel.scrollHeight}px` : "0px";
+    }
+
+    function buildDaySection(dateStr, sessions, index) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "day-accordion";
+
+      const panelId = `day-panel-${index}`;
+      const header = document.createElement("button");
+      header.type = "button";
+      header.className = "day-accordion__header";
+      header.setAttribute("aria-expanded", "false");
+      header.setAttribute("aria-controls", panelId);
+      header.innerHTML = `
+        <span>
+          <p class="day-accordion__eyebrow">Day ${index + 1}</p>
+          <p class="day-accordion__date">${formatDayLabel(dateStr)}</p>
+        </span>
+        <svg class="day-accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      `;
+
+      const panel = document.createElement("div");
+      panel.className = "day-accordion__panel";
+      panel.id = panelId;
+      panel.setAttribute("role", "region");
+
+      const inner = document.createElement("div");
+      inner.className = "day-accordion__panel-inner";
+
+      const list = document.createElement("ul");
+      list.className = "schedule-list";
+      sessions.forEach((session) => list.appendChild(buildSessionCard(session)));
+
+      inner.appendChild(list);
+      panel.appendChild(inner);
+
+      header.addEventListener("click", () => togglePanel(panel, header));
+
+      wrapper.append(header, panel);
+      return wrapper;
+    }
+
+    function renderSchedule(rows) {
+      scheduleDays.innerHTML = "";
+      const days = groupByDate(rows);
+      if (days.length === 0) {
+        scheduleEmpty.hidden = false;
+        return;
+      }
+      scheduleEmpty.hidden = true;
+
+      days.forEach(([dateStr, sessions], index) => {
+        scheduleDays.appendChild(buildDaySection(dateStr, sessions, index));
+      });
+
+      // Day 1 open by default, other days start folded.
+      const firstHeader = scheduleDays.querySelector(".day-accordion__header");
+      const firstPanel = scheduleDays.querySelector(".day-accordion__panel");
+      if (firstHeader && firstPanel) togglePanel(firstPanel, firstHeader, true);
+    }
+
+    async function loadSchedule() {
+      try {
+        const res = await fetch("/sessions.json");
+        if (!res.ok) throw new Error("bad response");
+        const sessions = await res.json();
+        renderSchedule(sessions);
+      } catch (err) {
+        scheduleDays.innerHTML = "";
+        scheduleEmpty.hidden = false;
+        scheduleEmpty.textContent = "Couldn't load the schedule. Try refreshing.";
+      }
+    }
+
+    loadSchedule();
+  </script>
+
+  <section class="board-feed" aria-labelledby="organizersHeading">
+    <h2 id="organizersHeading" class="board-feed__heading">Organized by</h2>
+    <ul class="org-logo-list">
+      <li class="org-logo-list__item org-logo-list__item--90"><img src="/icon/org/org_1_final.png" alt="TUM"></li>
+      <li class="org-logo-list__item org-logo-list__item--110"><img src="/icon/org/org_2_final.png" alt="EUnet4DBP"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_3_final.png" alt="OGC"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_4_final.png" alt="University of Auckland"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_5_final.png" alt="DigiB"></li>
+    </ul>
+  </section>
+
+  <footer class="site-footer">
+    <img src="/icon/dbp26-full.svg" alt="DBP '26" class="site-footer__logo">
+  </footer>
+
+</body>
+</html>

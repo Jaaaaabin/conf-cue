@@ -1,0 +1,12 @@
+session_key,date,time,session_shortname,session_fullname,presenter,paper_id,doi
+s001,2026-11-25,09:00,Registration & Coffee,Registration & Coffee,,,
+s002,2026-11-25,09:30,Opening Remarks,Opening Remarks,Program Committee,,
+s003,2026-11-25,10:00,Model Healing,"Model Healing: Toward a Framework for Building Designs to Achieve Code Compliance",Jiabin Wu,001,10.1201/9781003354222-58
+s004,2026-11-25,10:45,Coffee Break,Coffee Break,,,
+s005,2026-11-25,11:15,Semantic Enrichment for Code-Checking,"Leveraging Graph Based Semantic Enrichment for Enhanced Automated Code-Checking",Tanya Bloch,002,10.35490/EC3.2024.247
+s006,2026-11-25,12:00,Lunch,Lunch,,,
+s007,2026-11-25,13:30,IFC Spatial Design & Parametrics,"Enriching IFC Models with Spatial Design Logic and Parametrics to Improve Design Adaptability",Jiabin Wu,003,10.1007/978-3-031-84208-5_8
+s008,2026-11-25,14:15,BIM Conflict Resolution via RL,"Towards Automated BIM Conflict Resolution Using Reinforcement Learning",Yuye Jiang,004,10.17868/strath.00093289
+s009,2026-11-25,15:00,Coffee Break,Coffee Break,,,
+s010,2026-11-25,15:30,BIM Pedagogy Assessment,"Semi-Automated Assessment in Fundamental BIM Pedagogy for Large Cohorts",Jiabin Wu,005,10.15480/882.13493
+s011,2026-11-25,16:15,Closing Discussion,Closing Discussion,Program Committee,,

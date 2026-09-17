@@ -1,5 +1,51 @@
+# --- Python / tooling ---
 .venv/
 __pycache__/
 *.pyc
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+
+# --- Editors / OS ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Claude Code workspace config. Not needed to build or run the app — drop this
+# line if you'd rather carry the skills between machines.
+.claude/
+
+# --- Secrets ---
+# Real values live in /etc/conf-cue.env in production (see README.md Part 3).
+# .env.example IS tracked and lists what needs setting.
 .env
+
+# --- Runtime state (created by the app, never committed) ---
 data/*.db
+data/*.db-wal
+data/*.db-shm
+data/uploads/
+
+# --- Generated / fetched artifacts ---
+# Everything below is rebuilt from tracked sources, so a fresh clone is complete
+# without it. See README.md Part 2 "Conference papers" for the rebuild order.
+#   frontend/sessions.json  <- scripts/build_sessions_index.py (frontend/schedule.csv)
+#   data/paper_index/       <- scripts/build_paper_index.py    (data/papers/*.pdf)
+#   frontend/papers/        <- scripts/extract_figures.py      (data/papers/*.pdf)
+# data/papers/ holds the source PDFs — not redistributable here, fetched per DOI.
+frontend/sessions.json
+frontend/papers/
+data/papers/
+data/paper_index/
+
+# --- Generated output ---
+# QR codes are regenerated from scripts/make_qr.py; see REDIRECT.md.
+qr/
+
+# --- Raw sponsor/partner media kits (~105 MB) ---
+# Bulk originals, not needed to run. The cropped logos actually used by the site
+# are tracked under frontend/icon/, and the per-logo originals under
+# icon_archive/org|par/ are tracked too, so nothing referenced is lost.
+icon_archive/temp/

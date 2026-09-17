@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Questions — ConfCue</title>
+<link rel="icon" type="image/svg+xml" href="/icon/dbp26.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="stage stage--board stage--with-nav stage--white-bg">
+  <nav class="nav-fold">
+    <button type="button" class="nav-fold__toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="7" x2="20" y2="7"></line>
+        <line x1="4" y1="12" x2="20" y2="12"></line>
+        <line x1="4" y1="17" x2="20" y2="17"></line>
+      </svg>
+    </button>
+    <div class="nav-fold__panel" id="navPanel">
+      <ul class="nav-fold__list">
+        <li><a href="/" class="nav-fold__link">Chat</a></li>
+        <li><a href="/schedule.html" class="nav-fold__link">Schedule</a></li>
+        <li><a href="/sponsors.html" class="nav-fold__link">Sponsors &amp; Partners</a></li>
+        <li><a href="/venues.html" class="nav-fold__link">Venues</a></li>
+        <li><a href="/contact.html" class="nav-fold__link">Contact</a></li>
+        <li><a href="/myquestions.html" class="nav-fold__link is-current">My Questions</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="board-header">
+    <div>
+      <p class="stub-eyebrow">ConfCue</p>
+      <h1 class="board-title">My Questions</h1>
+    </div>
+  </header>
+
+  <section class="board-feed" aria-labelledby="mineHeading">
+    <h2 id="mineHeading" class="board-feed__heading">Only visible on this device</h2>
+    <ul id="mineList" class="feed-list"></ul>
+    <p id="mineEmpty" class="feed-empty">You haven't asked anything yet.</p>
+  </section>
+
+  <p class="ask-footnote"><a href="/">← Ask another question</a></p>
+
+  <script src="/nav.js"></script>
+<script>
+    const STORAGE_KEY = "confcue_my_questions";
+    const CATEGORIES = ["Just Curious", "Check Paper", "To Moderator"];
+
+    const mineList = document.getElementById("mineList");
+    const mineEmpty = document.getElementById("mineEmpty");
+    function loadMine() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    async function renderMine() {
+      const stored = loadMine();
+      if (stored.length === 0) {
+        mineEmpty.hidden = false;
+        mineList.innerHTML = "";
+        return;
+      }
+
+      // Merge in fresh server data (answers arrive after submission). Only
+      // fall back to the stored snapshot when the fetch itself fails
+      // (offline) — if it succeeds and a question's id is missing, that
+      // question was actually deleted server-side (e.g. a manual reset), so
+      // drop it instead of resurrecting a stale copy.
+      let items = stored;
+      try {
+        const res = await fetch("/questions");
+        if (res.ok) {
+          const all = await res.json();
+          const freshById = new Map(all.map((q) => [q.id, q]));
+          items = stored.filter((item) => freshById.has(item.id)).map((item) => freshById.get(item.id));
+          if (items.length !== stored.length) {
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+            } catch (err) {
+              // Best-effort prune — harmless if it doesn't persist.
+            }
+          }
+        }
+      } catch (err) {
+        // Offline — render the last known snapshot (no answer field yet).
+      }
+
+      mineEmpty.hidden = items.length > 0;
+      mineList.innerHTML = "";
+      [...items].reverse().forEach((item) => {
+        const li = document.createElement("li");
+        li.className = "feed-card";
+
+        const ticket = document.createElement("p");
+        ticket.className = "feed-card__ticket";
+        ticket.textContent = `#${String(item.id).padStart(2, "0")}`;
+
+        const text = document.createElement("p");
+        text.className = "feed-card__text";
+        text.textContent = item.text;
+
+        li.append(ticket, text);
+
+        const classifyRow = document.createElement("div");
+        classifyRow.className = "classify-row";
+        CATEGORIES.forEach((cat) => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "classify-chip" + (item.category === cat ? " is-active" : "");
+          chip.textContent = cat;
+          chip.dataset.questionId = item.id;
+          chip.dataset.category = cat;
+          classifyRow.appendChild(chip);
+        });
+        li.appendChild(classifyRow);
+
+        if (item.answer) {
+          const answerBlock = document.createElement("div");
+          answerBlock.className = "ai-answer";
+
+          const badge = document.createElement("p");
+          badge.className = "ai-answer__badge";
+          badge.textContent = "ConfCue ✦";
+
+          const answerText = document.createElement("p");
+          answerText.className = "ai-answer__text";
+          answerText.textContent = item.answer;
+
+          answerBlock.append(badge, answerText);
+
+          if (item.citation) {
+            const citation = document.createElement("p");
+            citation.className = "ai-answer__citation";
+            citation.textContent = item.citation;
+            answerBlock.appendChild(citation);
+          }
+
+          li.appendChild(answerBlock);
+        }
+
+        mineList.appendChild(li);
+      });
+    }
+
+    mineList.addEventListener("click", async (event) => {
+      const chip = event.target.closest(".classify-chip");
+      if (!chip) return;
+
+      const questionId = Number(chip.dataset.questionId);
+      const newCategory = chip.classList.contains("is-active") ? null : chip.dataset.category;
+
+      // Optimistic update within this card's chip row only.
+      [...chip.parentElement.children].forEach((c) => {
+        c.classList.toggle("is-active", c.dataset.category === newCategory);
+      });
+
+      try {
+        await fetch(`/questions/${questionId}/category`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category: newCategory }),
+        });
+      } catch (err) {
+        // Best-effort — the next poll reconciles from the server either way.
+      }
+    });
+
+    renderMine();
+    setInterval(renderMine, 5000);
+  </script>
+
+  <section class="board-feed" aria-labelledby="organizersHeading">
+    <h2 id="organizersHeading" class="board-feed__heading">Organized by</h2>
+    <ul class="org-logo-list">
+      <li class="org-logo-list__item org-logo-list__item--90"><img src="/icon/org/org_1_final.png" alt="TUM"></li>
+      <li class="org-logo-list__item org-logo-list__item--110"><img src="/icon/org/org_2_final.png" alt="EUnet4DBP"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_3_final.png" alt="OGC"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_4_final.png" alt="University of Auckland"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_5_final.png" alt="DigiB"></li>
+    </ul>
+  </section>
+
+  <footer class="site-footer">
+    <img src="/icon/dbp26-full.svg" alt="DBP '26" class="site-footer__logo">
+  </footer>
+
+</body>
+</html>

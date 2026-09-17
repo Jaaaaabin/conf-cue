@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask a question — ConfCue</title>
+<link rel="icon" type="image/svg+xml" href="/icon/dbp26.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="stage stage--ask stage--white-bg">
+  <nav class="nav-fold">
+    <button type="button" class="nav-fold__toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="7" x2="20" y2="7"></line>
+        <line x1="4" y1="12" x2="20" y2="12"></line>
+        <line x1="4" y1="17" x2="20" y2="17"></line>
+      </svg>
+    </button>
+    <div class="nav-fold__panel" id="navPanel">
+      <ul class="nav-fold__list">
+        <li><a href="/" class="nav-fold__link is-current">Chat</a></li>
+        <li><a href="/schedule.html" class="nav-fold__link">Schedule</a></li>
+        <li><a href="/sponsors.html" class="nav-fold__link">Sponsors &amp; Partners</a></li>
+        <li><a href="/venues.html" class="nav-fold__link">Venues</a></li>
+        <li><a href="/contact.html" class="nav-fold__link">Contact</a></li>
+        <li><a href="/myquestions.html" class="nav-fold__link">My Questions</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="stub-card">
+    <p class="stub-eyebrow">ConfCue</p>
+
+    <div class="now-banner" id="nowBanner" hidden>
+      <p class="board-live"><span class="pulse-dot"></span><span id="nowLabel">Now</span></p>
+      <p class="now-banner__text" id="nowText"></p>
+      <p class="now-banner__caveat">Times are approximate — the room may be running a few minutes behind or ahead.</p>
+    </div>
+
+    <div class="figure-strip" id="figureStrip" hidden aria-label="Figures from this paper"></div>
+
+    <div class="stamp-row" id="stampRow" aria-label="React to the room"></div>
+
+    <h1 class="stub-headline stub-headline--hero">Ask your question.</h1>
+    <p class="stub-sub">It goes straight to the moderator's board.</p>
+
+    <div class="stub-edge"></div>
+
+    <form id="askForm" class="stub-form">
+      <input
+        id="questionInput"
+        class="stub-input"
+        type="text"
+        name="text"
+        placeholder="Type your question…"
+        maxlength="280"
+        autocomplete="off"
+        required
+      >
+      <button type="submit" class="stub-button" id="submitButton">Submit</button>
+      <div id="choiceStage" hidden>
+        <p class="stub-choice-label">Pick one to send it.</p>
+        <div class="stub-choice-group">
+          <button type="button" class="stub-choice-button" data-category="Just Curious">Just Curious</button>
+          <button type="button" class="stub-choice-button" data-category="Check Paper">Check Paper</button>
+          <button type="button" class="stub-choice-button" data-category="To Moderator">To Moderator</button>
+        </div>
+      </div>
+    </form>
+    <p id="askStatus" class="stub-status" role="status" aria-live="polite"></p>
+
+    <p class="ask-footnote"><a href="/myquestions.html">Your previous questions →</a></p>
+  </main>
+
+  <button type="button" class="chat-fab" id="chatFab" aria-expanded="false" aria-controls="chatSheet" aria-label="Open session chat">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.8L3 21l1.9-4.6A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"></path>
+    </svg>
+    <span class="chat-fab__badge" id="chatBadge" hidden></span>
+  </button>
+
+  <div class="chat-scrim" id="chatScrim" hidden></div>
+
+  <section class="chat-sheet" id="chatSheet" role="dialog" aria-modal="true" aria-labelledby="chatTitle" hidden>
+    <header class="chat-sheet__header">
+      <div>
+        <p class="stub-eyebrow">Session chat</p>
+        <h2 class="chat-sheet__title" id="chatTitle">Everyone can see this.</h2>
+        <p class="chat-sheet__scope" id="chatScope"></p>
+      </div>
+      <button type="button" class="chat-close" id="chatClose" aria-label="Close chat">✕</button>
+    </header>
+
+    <ul class="chat-list" id="chatList"></ul>
+    <p class="chat-empty" id="chatEmpty">No messages yet. Say the first thing.</p>
+
+    <form class="chat-form" id="chatForm">
+      <div class="chat-pending" id="chatPending" hidden>
+        <img id="chatPendingThumb" alt="">
+        <span id="chatPendingLabel">Photo ready</span>
+        <button type="button" id="chatPendingRemove">Remove</button>
+      </div>
+      <div class="chat-compose-row">
+        <textarea
+          id="chatInput"
+          class="chat-input"
+          placeholder="Message the room…"
+          maxlength="500"
+          autocomplete="off"
+        ></textarea>
+        <button type="button" class="chat-attach" id="chatAttach" aria-label="Attach a photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+            <circle cx="8.5" cy="9.5" r="1.5"></circle>
+            <path d="m21 16-5-5L5 20"></path>
+          </svg>
+        </button>
+      </div>
+      <input type="file" id="chatFile" accept="image/jpeg,image/png,image/webp" hidden>
+      <button type="submit" class="chat-send">Send</button>
+    </form>
+    <p class="chat-notice">Public and anonymous — anyone in this session can read it.</p>
+  </section>
+
+  <script src="/nav.js"></script>
+  <script>
+    const STORAGE_KEY = "confcue_my_questions";
+
+    const form = document.getElementById("askForm");
+    const input = document.getElementById("questionInput");
+    const status = document.getElementById("askStatus");
+    const submitButton = document.getElementById("submitButton");
+    const choiceStage = document.getElementById("choiceStage");
+    const stampRow = document.getElementById("stampRow");
+    const nowBanner = document.getElementById("nowBanner");
+    const nowLabel = document.getElementById("nowLabel");
+    const nowText = document.getElementById("nowText");
+    const figureStrip = document.getElementById("figureStrip");
+
+    function loadMine() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function rememberMine(item) {
+      try {
+        const items = loadMine();
+        items.push(item);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      } catch (err) {
+        // localStorage unavailable (private mode, storage full) — submission still succeeded server-side.
+      }
+    }
+
+    // Minimal CSV parse: fine for this comma-free mock data (no quoted/escaped fields).
+    function todayDateStr() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function updateNowBanner(sessions) {
+      const now = new Date();
+      const todaySessions = sessions.filter((s) => s.date === todayDateStr());
+
+      if (todaySessions.length === 0) {
+        nowBanner.hidden = true;
+        return;
+      }
+
+      // todaySessions is ascending by start time; the last one that has already
+      // started is "current" — sessions have no explicit end time in the CSV.
+      const current = [...todaySessions].reverse().find((s) => s.start <= now);
+
+      if (!current) {
+        const first = todaySessions[0];
+        nowLabel.textContent = "Starting soon";
+        nowText.textContent = `${first.session_shortname} at ${first.time}`;
+      } else {
+        nowLabel.textContent = "Now";
+        const presenterPart = current.presenter ? ` — ${current.presenter}` : "";
+        nowText.textContent = `${current.session_shortname}${presenterPart}`;
+      }
+      nowBanner.hidden = false;
+    }
+
+    let scheduleSessions = [];
+
+    async function loadSchedule() {
+      try {
+        const res = await fetch("/sessions.json");
+        if (!res.ok) throw new Error("bad response");
+        const sessions = await res.json();
+        scheduleSessions = sessions
+          .map((session) => ({ ...session, start: new Date(`${session.date}T${session.time}:00`) }))
+          .sort((a, b) => a.start - b.start);
+
+        updateNowBanner(scheduleSessions);
+        updateFigureStrip();
+        setInterval(() => {
+          updateNowBanner(scheduleSessions);
+          updateFigureStrip();
+        }, 60000);
+      } catch (err) {
+        // Schedule unavailable — banner just stays hidden, not a critical path.
+      }
+    }
+
+    let papersManifest = {};
+
+    async function loadPapersManifest() {
+      try {
+        const res = await fetch("/papers/index.json");
+        if (!res.ok) throw new Error("bad response");
+        papersManifest = await res.json();
+      } catch (err) {
+        // Nothing built yet, or no figures extracted for the current lineup —
+        // normal state, the strip just stays hidden.
+      }
+      // Independent fetch from loadSchedule() — whichever of the two
+      // resolves second is what actually renders the correct final state.
+      updateFigureStrip();
+    }
+
+    function updateFigureStrip() {
+      const key = currentSessionKey();
+      const entry = key ? papersManifest[key] : null;
+      const figures = entry ? entry.figures : null;
+
+      figureStrip.innerHTML = "";
+      if (!figures || figures.length === 0) {
+        figureStrip.hidden = true;
+        return;
+      }
+
+      figures.forEach((fig) => {
+        const src = `/papers/${entry.paper_id}/${fig.file}`;
+
+        const link = document.createElement("a");
+        link.className = "figure-strip__item";
+        link.href = src;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = fig.caption;
+        img.loading = "lazy";
+
+        link.appendChild(img);
+        figureStrip.appendChild(link);
+      });
+      figureStrip.hidden = false;
+    }
+
+    function currentSessionKey() {
+      const now = new Date();
+      const today = scheduleSessions.filter((s) => s.date === todayDateStr());
+      const current = [...today].reverse().find((s) => s.start <= now);
+      return current ? current.session_key : null;
+    }
+
+    // --- reaction stamps ---
+    // Used only if the first /reactions call fails — the server's emoji
+    // list (data.emojis) is the source of truth once a response lands.
+    const FALLBACK_REACTIONS = ["🔥", "❤️", "👏", "🤔", "😄", "🎉"];
+    let stampCounts = {};
+
+    function buildStamps(emojis) {
+      emojis.forEach((emoji) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "stamp";
+        button.dataset.emoji = emoji;
+        button.setAttribute("aria-label", `React ${emoji}`);
+
+        const face = document.createElement("span");
+        face.className = "stamp__emoji";
+        face.textContent = emoji;
+
+        const count = document.createElement("span");
+        count.className = "stamp__count";
+        count.textContent = "";
+
+        button.append(face, count);
+        stampRow.appendChild(button);
+      });
+    }
+
+    function paintStamps() {
+      const peak = Math.max(0, ...Object.values(stampCounts));
+      [...stampRow.children].forEach((button) => {
+        const n = stampCounts[button.dataset.emoji] || 0;
+        const count = button.querySelector(".stamp__count");
+        count.textContent = n > 0 ? n : "";
+        count.classList.toggle("is-hot", n > 0 && n === peak);
+      });
+    }
+
+    async function pollStamps() {
+      try {
+        const res = await fetch("/reactions");
+        if (!res.ok) throw new Error("bad response");
+        const data = await res.json();
+        if (!stampRow.children.length) buildStamps(data.emojis);
+        stampCounts = data.recent;
+        paintStamps();
+      } catch (err) {
+        // Keep the last known counts on screen; if stamps never loaded at
+        // all, fall back to a local list so the row isn't left empty.
+        if (!stampRow.children.length) buildStamps(FALLBACK_REACTIONS);
+      }
+    }
+
+    stampRow.addEventListener("click", async (event) => {
+      const button = event.target.closest(".stamp");
+      if (!button) return;
+      const emoji = button.dataset.emoji;
+
+      // Optimistic: the poll is 5s away, the tap should feel instant.
+      stampCounts[emoji] = (stampCounts[emoji] || 0) + 1;
+      paintStamps();
+      button.classList.remove("is-stamped");
+      void button.offsetWidth; // restart the animation on rapid repeat taps
+      button.classList.add("is-stamped");
+
+      try {
+        const res = await fetch("/reactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ emoji }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          stampCounts = data.recent;
+          paintStamps();
+        }
+      } catch (err) {
+        // Optimistic bump stands; the next poll reconciles with the server.
+      }
+    });
+
+    pollStamps();
+    setInterval(pollStamps, 5000);
+
+    loadSchedule();
+    loadPapersManifest();
+
+    function showChoices() {
+      submitButton.hidden = true;
+      choiceStage.hidden = false;
+    }
+
+    function resetChoices() {
+      choiceStage.hidden = true;
+      submitButton.hidden = false;
+    }
+
+    // Stage 1 — the plain Submit button only splits itself into the three
+    // category buttons. Native `required` validation still gates this, so the
+    // split never happens on an empty question.
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!input.value.trim()) return;
+      status.textContent = "";
+      status.removeAttribute("data-state");
+      showChoices();
+    });
+
+    // Stage 2 — picking a category is what actually sends the question.
+    choiceStage.addEventListener("click", async (event) => {
+      const button = event.target.closest(".stub-choice-button");
+      if (!button) return;
+
+      const text = input.value.trim();
+      if (!text) return;
+      const category = button.dataset.category;
+
+      status.textContent = "";
+      status.removeAttribute("data-state");
+
+      try {
+        const res = await fetch("/questions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, category, session_key: currentSessionKey() }),
+        });
+        if (!res.ok) throw new Error("bad response");
+        const item = await res.json();
+        const ticket = String(item.id).padStart(2, "0");
+        status.innerHTML = `Queued as <span class="stub-ticket">#${ticket}</span> — on the board.`;
+        status.dataset.state = "ok";
+        input.value = "";
+        input.focus();
+        rememberMine(item);
+        resetChoices();
+      } catch (err) {
+        status.textContent = "Didn't go through. Check your connection and try again.";
+        status.dataset.state = "error";
+        // Leave the choices up so the same pick can be retried.
+      }
+    });
+
+    // --- public session chat ---
+    const CHAT_MINE_KEY = "confcue_my_messages";
+    const CHAT_SEEN_KEY = "confcue_chat_seen";
+
+    const chatFab = document.getElementById("chatFab");
+    const chatBadge = document.getElementById("chatBadge");
+    const chatScrim = document.getElementById("chatScrim");
+    const chatSheet = document.getElementById("chatSheet");
+    const chatClose = document.getElementById("chatClose");
+    const chatScope = document.getElementById("chatScope");
+    const chatList = document.getElementById("chatList");
+    const chatEmpty = document.getElementById("chatEmpty");
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("chatInput");
+
+    let chatTimer = null;
+
+    function readIds(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        return new Set(raw ? JSON.parse(raw) : []);
+      } catch (err) {
+        return new Set();
+      }
+    }
+
+    function rememberMineMessage(id) {
+      try {
+        const ids = [...readIds(CHAT_MINE_KEY), id];
+        localStorage.setItem(CHAT_MINE_KEY, JSON.stringify(ids));
+      } catch (err) {
+        // Storage unavailable — the message still posted; it just won't be marked as yours.
+      }
+    }
+
+    function lastSeenId() {
+      try {
+        return Number(localStorage.getItem(CHAT_SEEN_KEY) || 0);
+      } catch (err) {
+        return 0;
+      }
+    }
+
+    function markSeen(id) {
+      try {
+        localStorage.setItem(CHAT_SEEN_KEY, String(id));
+      } catch (err) {
+        // Non-critical: the badge just won't persist across reloads.
+      }
+    }
+
+    // Chat is scoped to whatever session is live; "lobby" outside session hours.
+    function chatSessionKey() {
+      return currentSessionKey() || "lobby";
+    }
+
+    function chatScopeLabel() {
+      const now = new Date();
+      const today = scheduleSessions.filter((s) => s.date === todayDateStr());
+      const current = [...today].reverse().find((s) => s.start <= now);
+      return current ? current.session_shortname : "Between sessions";
+    }
+
+    function renderMessages(items) {
+      const mine = readIds(CHAT_MINE_KEY);
+      const nearBottom = chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 60;
+
+      chatEmpty.hidden = items.length > 0;
+      chatList.innerHTML = "";
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        li.className = "chat-msg" + (mine.has(item.id) ? " is-mine" : "");
+
+        if (item.image_url) {
+          const link = document.createElement("a");
+          link.href = item.image_url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+
+          const img = document.createElement("img");
+          img.className = "chat-msg__image";
+          img.src = item.image_url;
+          img.alt = "Photo shared in the session chat";
+          img.loading = "lazy";
+
+          link.appendChild(img);
+          li.appendChild(link);
+        }
+
+        const text = document.createElement("p");
+        text.className = "chat-msg__text";
+        text.textContent = item.text;
+        text.hidden = !item.text;
+
+        const meta = document.createElement("p");
+        meta.className = "chat-msg__meta";
+        const when = new Date(item.created_at);
+        meta.textContent =
+          (mine.has(item.id) ? "you · " : "") +
+          when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+        li.append(text, meta);
+        chatList.appendChild(li);
+      });
+
+      if (nearBottom) chatList.scrollTop = chatList.scrollHeight;
+    }
+
+    async function fetchMessages() {
+      const res = await fetch(`/messages?session=${encodeURIComponent(chatSessionKey())}`);
+      if (!res.ok) throw new Error("bad response");
+      return res.json();
+    }
+
+    async function pollChatOpen() {
+      try {
+        const items = await fetchMessages();
+        renderMessages(items);
+        if (items.length) markSeen(items[items.length - 1].id);
+        chatBadge.hidden = true;
+      } catch (err) {
+        // Keep whatever is already on screen.
+      }
+    }
+
+    // While closed, check occasionally just to light up the badge.
+    async function pollChatBadge() {
+      if (!chatSheet.hidden) return;
+      try {
+        const items = await fetchMessages();
+        const unseen = items.filter((m) => m.id > lastSeenId()).length;
+        chatBadge.textContent = unseen > 99 ? "99+" : unseen;
+        chatBadge.hidden = unseen === 0;
+      } catch (err) {
+        // Leave the badge as-is.
+      }
+    }
+
+    function openChat() {
+      chatScope.textContent = chatScopeLabel();
+      chatSheet.hidden = false;
+      chatScrim.hidden = false;
+      chatFab.setAttribute("aria-expanded", "true");
+      pollChatOpen().then(() => {
+        chatList.scrollTop = chatList.scrollHeight;
+      });
+      clearInterval(chatTimer);
+      chatTimer = setInterval(pollChatOpen, 4000);
+      chatInput.focus();
+    }
+
+    function closeChat() {
+      chatSheet.hidden = true;
+      chatScrim.hidden = true;
+      chatFab.setAttribute("aria-expanded", "false");
+      clearInterval(chatTimer);
+      chatTimer = setInterval(pollChatBadge, 20000);
+      chatFab.focus();
+    }
+
+    chatFab.addEventListener("click", () => {
+      chatSheet.hidden ? openChat() : closeChat();
+    });
+    chatClose.addEventListener("click", closeChat);
+    chatScrim.addEventListener("click", closeChat);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !chatSheet.hidden) closeChat();
+    });
+
+    // --- image attachment ---
+    const chatAttach = document.getElementById("chatAttach");
+    const chatFile = document.getElementById("chatFile");
+    const chatPending = document.getElementById("chatPending");
+    const chatPendingThumb = document.getElementById("chatPendingThumb");
+    const chatPendingLabel = document.getElementById("chatPendingLabel");
+    const chatPendingRemove = document.getElementById("chatPendingRemove");
+
+    const MAX_EDGE = 1600;
+    let pendingImageUrl = null;
+
+    // Re-encoding through a canvas does two jobs: it cuts an 8 MB phone photo to
+    // a few hundred KB (these people are on cellular), and it drops all EXIF —
+    // including the GPS coordinates phones embed, which must not be published.
+    async function decodeUpright(file) {
+      // Phones store a portrait photo as landscape pixels plus an EXIF rotate
+      // flag. Since we strip EXIF, the rotation must be baked into the pixels
+      // here or the photo arrives on its side. createImageBitmap applies it.
+      if (window.createImageBitmap) {
+        try {
+          return await createImageBitmap(file, { imageOrientation: "from-image" });
+        } catch (err) {
+          // fall through to the <img> path
+        }
+      }
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error("not an image")); };
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    async function shrinkImage(file) {
+      const source = await decodeUpright(file);
+      const w = source.width;
+      const h = source.height;
+      const scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+
+      if (source.close) source.close();
+      else if (source.src) URL.revokeObjectURL(source.src);
+
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("encode failed"))),
+          "image/jpeg",
+          0.85
+        );
+      });
+    }
+
+    function clearPendingImage() {
+      pendingImageUrl = null;
+      chatFile.value = "";
+      chatPending.hidden = true;
+      chatPendingThumb.removeAttribute("src");
+    }
+
+    chatAttach.addEventListener("click", () => chatFile.click());
+    chatPendingRemove.addEventListener("click", clearPendingImage);
+
+    chatFile.addEventListener("change", async () => {
+      const file = chatFile.files[0];
+      if (!file) return;
+
+      chatPending.hidden = false;
+      chatPendingLabel.textContent = "Preparing…";
+      try {
+        const blob = await shrinkImage(file);
+        chatPendingThumb.src = URL.createObjectURL(blob);
+        chatPendingLabel.textContent = "Uploading…";
+
+        const body = new FormData();
+        body.append("file", blob, "photo.jpg");
+        const res = await fetch("/messages/image", { method: "POST", body });
+        if (!res.ok) throw new Error("upload failed");
+        const data = await res.json();
+
+        pendingImageUrl = data.image_url;
+        chatPendingLabel.textContent = `Photo ready · ${Math.round(data.bytes / 1024)} KB`;
+      } catch (err) {
+        chatPendingLabel.textContent = "Couldn't attach that image.";
+        pendingImageUrl = null;
+      }
+    });
+
+    // Enter makes a newline in the textarea, so offer the usual shortcut to send.
+    chatInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        chatForm.requestSubmit();
+      }
+    });
+
+    chatForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const text = chatInput.value.trim();
+      const imageUrl = pendingImageUrl;
+      if (!text && !imageUrl) return;
+      chatInput.value = "";
+
+      try {
+        const res = await fetch("/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, session_key: chatSessionKey(), image_url: imageUrl }),
+        });
+        if (!res.ok) throw new Error("bad response");
+        const item = await res.json();
+        rememberMineMessage(item.id);
+        markSeen(item.id);
+        clearPendingImage();
+        await pollChatOpen();
+        chatList.scrollTop = chatList.scrollHeight;
+      } catch (err) {
+        chatInput.value = text; // hand the text back rather than losing it
+      }
+    });
+
+    chatTimer = setInterval(pollChatBadge, 20000);
+    pollChatBadge();
+  </script>
+
+  <section class="board-feed board-feed--card-width" aria-labelledby="organizersHeading">
+    <h2 id="organizersHeading" class="board-feed__heading">Organized by</h2>
+    <ul class="org-logo-list">
+      <li class="org-logo-list__item org-logo-list__item--90"><img src="/icon/org/org_1_final.png" alt="TUM"></li>
+      <li class="org-logo-list__item org-logo-list__item--110"><img src="/icon/org/org_2_final.png" alt="EUnet4DBP"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_3_final.png" alt="OGC"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_4_final.png" alt="University of Auckland"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_5_final.png" alt="DigiB"></li>
+    </ul>
+  </section>
+
+  <footer class="site-footer">
+    <img src="/icon/dbp26-full.svg" alt="DBP '26" class="site-footer__logo">
+  </footer>
+
+</body>
+</html>

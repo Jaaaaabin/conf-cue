@@ -1,20 +1,25 @@
 [project]
 name = "conf-cue"
 version = "0.1.0"
-description = "Add your description here"
+description = "Lightweight conference Q&A — attendees submit questions by QR code, a local LLM clusters and summarizes them live for the moderator."
 readme = "README.md"
 authors = [
-    { name = "Jaaaaabin", email = "wujiabin211@gmail.com" }
+    { name = "Jaaaaabin" }
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "aiosqlite>=0.22.1",
     "fastapi>=0.141.1",
+    "fastembed>=0.8.0",
+    "httpx>=0.28.1",
+    "ollama>=0.6.2",
+    "pymupdf>=1.28.2",
+    "python-multipart>=0.0.32",
     "uvicorn>=0.52.4",
 ]
 
-[project.scripts]
-conf-cue = "conf_cue:main"
-
-[build-system]
-requires = ["uv_build>=0.12.5,<0.13.0"]
-build-backend = "uv_build"
+# ConfCue is an application, not a library: it is run as `uvicorn backend.main:app`,
+# never imported as a package. Declaring it non-package means `uv sync` installs the
+# dependencies and nothing else — no build step, no stale editable install.
+[tool.uv]
+package = false

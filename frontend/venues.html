@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venues — ConfCue</title>
+<link rel="icon" type="image/svg+xml" href="/icon/dbp26.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="stage stage--board stage--with-nav stage--white-bg">
+  <nav class="nav-fold">
+    <button type="button" class="nav-fold__toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="7" x2="20" y2="7"></line>
+        <line x1="4" y1="12" x2="20" y2="12"></line>
+        <line x1="4" y1="17" x2="20" y2="17"></line>
+      </svg>
+    </button>
+    <div class="nav-fold__panel" id="navPanel">
+      <ul class="nav-fold__list">
+        <li><a href="/" class="nav-fold__link">Chat</a></li>
+        <li><a href="/schedule.html" class="nav-fold__link">Schedule</a></li>
+        <li><a href="/sponsors.html" class="nav-fold__link">Sponsors &amp; Partners</a></li>
+        <li><a href="/venues.html" class="nav-fold__link is-current">Venues</a></li>
+        <li><a href="/contact.html" class="nav-fold__link">Contact</a></li>
+        <li><a href="/myquestions.html" class="nav-fold__link">My Questions</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="board-header">
+    <div>
+      <p class="stub-eyebrow">ConfCue</p>
+      <h1 class="board-title">Venues</h1>
+    </div>
+  </header>
+
+  <section class="board-feed" aria-labelledby="venueMapHeading">
+    <h2 id="venueMapHeading" class="board-feed__heading">Conference Venue Layout</h2>
+    <p class="feed-empty">Venue map coming soon.</p>
+  </section>
+
+  <section class="board-feed" aria-labelledby="locationHeading">
+    <h2 id="locationHeading" class="board-feed__heading">Conference Venue Location</h2>
+    <p class="session-card__topic">Oskar von Miller Forum</p>
+    <div class="terminal-box">
+      <div class="terminal-box__line">
+        <code class="terminal-box__text" id="venueAddress">Oskar-von-Miller-Ring 25, <br>80333 Munich, Germany</code>
+      </div>
+      <div class="terminal-box__icons">
+        <button type="button" class="terminal-box__icon-btn copy-address-btn" data-copy-target="venueAddress" aria-label="Copy address" title="Copy address">
+          <img src="/icon/ui/textcopy.png" alt="" class="terminal-box__icon-img">
+        </button>
+        <a
+          id="venueMapsLink"
+          class="terminal-box__icon-btn"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open in Google Maps"
+          title="Open in Google Maps"
+        >
+          <img src="/icon/ui/googlemap.png" alt="" class="terminal-box__icon-img">
+        </a>
+      </div>
+    </div>
+    <iframe
+      id="venueMapIframe"
+      class="venue-map"
+      height="360"
+      allowfullscreen
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      title="Venue location"
+    ></iframe>
+  </section>
+
+  <section class="board-feed" aria-labelledby="dinnerHeading">
+    <h2 id="dinnerHeading" class="board-feed__heading">Conference Dinner Information</h2>
+    <p class="feed-empty">Details coming soon — location and time to be confirmed.</p>
+    <p class="session-card__topic">Löwenbräukeller - Das Original</p>
+    <div class="terminal-box">
+      <div class="terminal-box__line">
+        <code class="terminal-box__text" id="dinnerAddress">Stiglmaierplatz, Nymphenburger Str. 2, <br>80335 Munich, Germany</code>
+      </div>
+      <div class="terminal-box__icons">
+        <button type="button" class="terminal-box__icon-btn copy-address-btn" data-copy-target="dinnerAddress" aria-label="Copy address" title="Copy address">
+          <img src="/icon/ui/textcopy.png" alt="" class="terminal-box__icon-img">
+        </button>
+        <a
+          id="dinnerMapsLink"
+          class="terminal-box__icon-btn"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open in Google Maps"
+          title="Open in Google Maps"
+        >
+          <img src="/icon/ui/googlemap.png" alt="" class="terminal-box__icon-img">
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script src="/nav.js"></script>
+<script>
+    // Each address lives once, in its .terminal-box__text — the Maps link
+    // and (for the venue) the embedded map both derive their query from it,
+    // instead of three independently hand-encoded copies of the same string.
+    function wireMapsLinks({ addressId, linkId, iframeId, venueName }) {
+      const address = document.getElementById(addressId).textContent;
+      const query = venueName ? `${venueName}, ${address}` : address;
+      const encoded = encodeURIComponent(query);
+
+      const link = document.getElementById(linkId);
+      if (link) link.href = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+
+      const iframe = iframeId && document.getElementById(iframeId);
+      if (iframe) iframe.src = `https://maps.google.com/maps?q=${encoded}&z=16&output=embed`;
+    }
+
+    wireMapsLinks({
+      addressId: "venueAddress",
+      linkId: "venueMapsLink",
+      iframeId: "venueMapIframe",
+      venueName: "Oskar von Miller Forum",
+    });
+    wireMapsLinks({ addressId: "dinnerAddress", linkId: "dinnerMapsLink" });
+
+    document.querySelectorAll(".copy-address-btn").forEach((button) => {
+      const target = document.getElementById(button.dataset.copyTarget);
+
+      button.addEventListener("click", async () => {
+        const text = target.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (err) {
+          // Clipboard API unavailable (older browser, insecure context) — fall back to manual selection.
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        button.classList.add("is-copied");
+        button.setAttribute("title", "Copied!");
+        setTimeout(() => {
+          button.classList.remove("is-copied");
+          button.setAttribute("title", "Copy address");
+        }, 1500);
+      });
+    });
+  </script>
+
+  <section class="board-feed" aria-labelledby="organizersHeading">
+    <h2 id="organizersHeading" class="board-feed__heading">Organized by</h2>
+    <ul class="org-logo-list">
+      <li class="org-logo-list__item org-logo-list__item--90"><img src="/icon/org/org_1_final.png" alt="TUM"></li>
+      <li class="org-logo-list__item org-logo-list__item--110"><img src="/icon/org/org_2_final.png" alt="EUnet4DBP"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_3_final.png" alt="OGC"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_4_final.png" alt="University of Auckland"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_5_final.png" alt="DigiB"></li>
+    </ul>
+  </section>
+
+  <footer class="site-footer">
+    <img src="/icon/dbp26-full.svg" alt="DBP '26" class="site-footer__logo">
+  </footer>
+
+</body>
+</html>

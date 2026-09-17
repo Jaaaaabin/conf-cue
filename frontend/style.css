@@ -1,0 +1,1797 @@
+:root {
+  --bg: #f8f8f8;
+  --ink: #2f2d2d;
+  --ink-soft: #5c6570;
+  --accent: #2f5496;
+  --accent-soft: #e4ecf5;
+  --line: #dde3ea;
+  --live: #61ce70;
+  --ai: #3498db;
+  --ai-soft: rgba(52, 152, 219, 0.08);
+  --surface: #ffffff;
+  --on-accent: #ffffff;
+  --font-display: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  /* Rounded/soft feel for section titles — Quicksand loaded via Google Fonts
+     in every page's <head>; falls back to a system rounded font, then body. */
+  --font-heading: "Quicksand", ui-rounded, "SF Pro Rounded", var(--font-body);
+  /* Shared by every section heading (.board-feed__heading, .board-summary__heading)
+     across all pages — one control point instead of duplicated literals per rule.
+     0.72rem -> 0.88rem -> 1rem: two steps up the sizes already in use elsewhere
+     in this file (0.72/0.78/0.85/0.92/1rem family). */
+  --heading-size: clamp(0.92rem, calc(0.92rem + (100vw - 320px) * 0.0183), 1rem);
+  --heading-tracking: 0.07em;
+  /* Page gutter (left/right padding on every .stage) and the vertical rhythm
+     between sections — same one-control-point idea as the heading vars above.
+     The gutter ramps 16px -> 24px across 320px -> 390px of viewport rather
+     than stepping at a breakpoint: a hard step made a 360px phone show a
+     WIDER text column than a 375px one, which is the wrong way round. */
+  --gutter: clamp(1rem, calc(1rem + (100vw - 320px) * 0.1143), 1.5rem);
+  --section-gap: 2rem;
+  /* Inner padding of the boxes that nest inside the gutter. Ramped on the same
+     320->390 track, because these stack: a schedule title sits behind the
+     gutter AND the accordion's padding AND the session card's padding, so a
+     fixed value costs three times over on the narrowest screens. */
+  --card-pad: clamp(0.75rem, calc(0.75rem + (100vw - 320px) * 0.08), 1.1rem);
+  --stub-pad: clamp(1.25rem, calc(1.25rem + (100vw - 320px) * 0.1143), 1.75rem);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+body.stage--white-bg {
+  background: #ffffff;
+}
+
+.site-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 0;
+}
+.site-footer::before {
+  content: "";
+  width: 48px;
+  height: 1px;
+  background: var(--line);
+}
+.site-footer__logo {
+  height: 28px;
+  width: auto;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.stub-eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* --- fold-out page nav, top-right on every page --- */
+.nav-fold {
+  position: fixed;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  z-index: 20;
+}
+
+.nav-fold__toggle {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(47, 45, 45, 0.14);
+}
+.nav-fold__toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.nav-fold__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 170px;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(47, 45, 45, 0.16);
+  transition: max-height 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+}
+.nav-fold__panel.is-open {
+  max-height: 300px;
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-fold__panel { transition: none; }
+}
+
+.nav-fold__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.4rem;
+}
+
+.nav-fold__link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-fold__link:hover {
+  background: var(--accent-soft);
+}
+.nav-fold__link.is-current {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- reaction stamps --- */
+.stamp-row {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+}
+
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+.stamp:active {
+  transform: scale(0.92) rotate(-3deg);
+  background: var(--accent-soft);
+}
+
+.stamp__emoji {
+  font-size: 0.72rem;
+}
+
+.stamp__count {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+}
+.stamp__count.is-hot {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* one-shot pop when a stamp is pressed */
+@keyframes stamped {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35) rotate(-6deg); }
+  100% { transform: scale(1); }
+}
+.stamp.is-stamped .stamp__emoji {
+  animation: stamped 0.32s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp.is-stamped .stamp__emoji { animation: none; }
+  .stamp:active { transform: none; }
+}
+
+/* --- reaction stamps on the moderator board --- */
+.board-stamps {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.board-stamp {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.board-stamp__emoji {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.board-stamp__count {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.board-stamp.is-hot {
+  border-color: var(--accent);
+}
+.board-stamp.is-hot .board-stamp__count {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- "happening now" banner (ask page) --- */
+.now-banner {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--accent-soft);
+  border-radius: 4px;
+}
+.now-banner[hidden] {
+  display: none;
+}
+.now-banner__text {
+  margin: 0.35rem 0 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.now-banner__caveat {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+/* --- figures from the paper currently on stage (ask page) --- */
+.figure-strip {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+.figure-strip[hidden] {
+  display: none;
+}
+.figure-strip__item {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.figure-strip__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --- perforated stub edge, the signature element --- */
+.stub-edge {
+  position: relative;
+  height: 1px;
+  margin: 1.25rem 0;
+  border-top: 2px dashed var(--line);
+}
+.stub-edge::before,
+.stub-edge::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: 0 0 0 2px var(--line) inset;
+}
+.stub-edge::before { left: -24px; }
+.stub-edge::after { right: -24px; }
+
+/* --- attendee ask page --- */
+.stage--ask {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--gutter);
+}
+.stage--ask .stub-card {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.stub-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2rem var(--stub-pad);
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.stub-headline {
+  margin: 0.5rem 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+/* the ask form is the point of the page — let it lead */
+.stub-headline--hero {
+  margin-top: 1.35rem;
+  font-size: 2.1rem;
+  line-height: 1.08;
+}
+
+.stub-sub {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.ask-footnote {
+  margin: 1.5rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+.ask-footnote a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.ask-footnote a:hover {
+  color: var(--accent);
+}
+
+.stub-form {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stub-input {
+  font: inherit;
+  font-size: 1.05rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.stub-input::placeholder {
+  color: var(--ink-soft);
+}
+
+.stub-choice-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.stub-choice-group[hidden] {
+  display: none;
+}
+
+.stub-choice-group {
+  display: flex;
+  gap: 0.4rem;
+  animation: split 0.22s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stub-choice-group { animation: none; }
+}
+@keyframes split {
+  from { opacity: 0; transform: scaleX(0.9); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+.stub-choice-button {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.8rem;
+  line-height: 1.25;
+  padding: 0.85rem 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1.5px solid var(--accent);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+.stub-choice-button:active {
+  transform: scale(0.97);
+  background: var(--accent-soft);
+}
+
+.stub-button {
+  font: inherit;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: 3px;
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.stub-button:active {
+  transform: scale(0.98);
+}
+
+.stub-status {
+  margin: 1rem 0 0;
+  min-height: 1.3em;
+  font-size: 0.9rem;
+}
+.stub-status[data-state="ok"] {
+  color: var(--live);
+}
+.stub-status[data-state="error"] {
+  color: var(--accent);
+}
+.stub-ticket {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* --- moderator board --- */
+.stage--board {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.75rem var(--gutter) 3rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.stage--board .site-footer {
+  margin-top: auto;
+}
+
+/* --- dashboard: wider, larger-type layout for laptop/projector viewing --- */
+@media (min-width: 900px) {
+  .stage--wide.stage--board {
+    max-width: 1100px;
+  }
+  .stage--wide .board-title {
+    font-size: 2.1rem;
+  }
+  .stage--wide .board-summary__text {
+    font-size: 1.25rem;
+    line-height: 1.45;
+  }
+  .stage--wide .feed-card__text {
+    font-size: 1.2rem;
+  }
+  .stage--wide .feed-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem;
+  }
+}
+
+.board-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1rem;
+}
+
+.board-title {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+}
+
+.board-live {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--live);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot { animation: none; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.board-summary {
+  margin-top: 1.5rem;
+  padding: 1rem 1.1rem;
+  background: var(--accent-soft);
+  border-radius: 4px;
+}
+.board-summary__heading {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-heading);
+  font-size: var(--heading-size);
+  letter-spacing: var(--heading-tracking);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.board-summary__text {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.board-feed {
+  margin-top: var(--section-gap);
+}
+/* .stage--board pages get their width from the stage container itself, but
+   .stage--ask (index.html) is a flex column with align-items: center, so a
+   plain block child shrinks to its own content width instead of the page's
+   column — match it to .stub-card's width there. */
+.board-feed--card-width {
+  width: 100%;
+  max-width: 380px;
+}
+.board-feed__heading {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--heading-size);
+  letter-spacing: var(--heading-tracking);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.feed-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.9rem 1.1rem 1rem;
+  animation: settle 0.25s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed-card { animation: none; }
+}
+@keyframes settle {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.feed-card__ticket {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.feed-card__delete {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.8rem;
+  border: none;
+  background: none;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  opacity: 0.55;
+  cursor: pointer;
+}
+.feed-card__delete:hover,
+.feed-card__delete:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.feed-card__text {
+  margin: 0.25rem 0 0;
+  font-size: 1.02rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.feed-empty {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.feed-empty[hidden] {
+  display: none;
+}
+
+/* --- grouped/foldable feeds: Questions by category, Chat by session.
+   A <details> per group so a moderator can fold away what they don't need —
+   built phone-first, since folding is most valuable on a small screen with
+   a long scroll, not the projector. --- */
+.feed-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.feed-group {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+}
+.feed-group .feed-list {
+  padding: 0 0.9rem 0.9rem;
+}
+.feed-group[open] > .feed-group__summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.feed-group__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0 0.9rem;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-heading);
+  font-size: var(--heading-size);
+  letter-spacing: var(--heading-tracking);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.feed-group__summary::-webkit-details-marker {
+  display: none;
+}
+.feed-group__summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+.feed-group[open] > .feed-group__summary::before {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed-group__summary::before { transition: none; }
+}
+
+.feed-group__label {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.feed-group__count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink-soft);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+
+/* --- chat moderation panel: same feed-card shape, sized for a moderator's
+   own phone as much as the projector, so the delete target is a real
+   44px tap target rather than the small text-link used for questions. --- */
+.chat-mod-card {
+  padding-right: 3.75rem;
+}
+.chat-mod-card__text {
+  margin: 0.15rem 0 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.chat-mod-card__image {
+  display: block;
+  max-height: 110px;
+  border-radius: 4px;
+  margin-top: 0.35rem;
+}
+.chat-mod-card__meta {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+.chat-mod-delete {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+.chat-mod-delete:hover,
+.chat-mod-delete:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.org-logo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(0.6rem, 3vw, 1.5rem);
+}
+/* Partners (9 logos) — a single nowrap row got too cramped to read on a
+   phone; a fixed 3x3 grid keeps every logo at a legible size instead. */
+.org-logo-list--grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 3.5rem;
+  row-gap: 0.75rem;
+}
+/* Equal height for all 9 — except a logo whose aspect ratio would make it
+   wider than its own column (Oskar von Miller Forum's plain-text wordmark,
+   ~8:1) shrinks below the target height instead of overlapping its
+   neighbors. Relying on the replaced-element sizing algorithm (height set,
+   width: auto, capped by max-width) rather than hardcoding which logo is
+   the outlier, so this keeps working if the logo set ever changes. */
+.org-logo-list--grid .org-logo-list__item img {
+  height: 100%;
+  width: auto;
+}
+/* One-off size override for an individual logo, independent of the shared
+   equal-height rule above (e.g. Georg Nemetschek Institute at 120%). Needs
+   the same ".org-logo-list--grid .org-logo-list__item" specificity as the
+   rule above it to actually win, not just override by source order.
+   max-width must move too — this logo is already width-bound at 100% of
+   its column (object-fit: contain was letterboxing it, not shrinking the
+   box), so raising height alone had no visible effect. Letting it spill
+   past its column into the row gap is deliberate here. */
+.org-logo-list--grid .org-logo-list__item--120 img {
+  height: 120%;
+  max-width: 120%;
+}
+.org-logo-list__item {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.org-logo-list__item img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+/* TUM's logo is a filled block, not a floating mark like the others, so it
+   reads visually larger than its neighbors at the same box height — scaled
+   down a notch to sit better in the row. */
+.org-logo-list__item--90 img {
+  max-width: 90%;
+  max-height: 90%;
+}
+/* EUnet4DBP nudged up from the shared 100%. */
+/* An absolute height, not a percentage — percentages don't count toward a
+   shrink-to-fit flex item's reserved size, so a percentage enlargement here
+   overflowed into the neighboring logo once items stopped being forced into
+   equal-width columns. */
+.org-logo-list__item--110 img {
+  height: 3.3rem;
+  max-height: none;
+}
+
+/* ==========================================================================
+   SPONSOR TIERS — design parameters (plain CSS, no build step)
+   Platinum = black + gold, diamond lattice, centred label + diamond mark.
+   Gold     = shallow champagne, centred label, no metal shine.
+   Other    = same shared header/body shape, deliberately undecorated so the
+   Platinum > Gold > Other hierarchy still reads at a glance.
+   Markup:
+     <div class="sponsor-tier sponsor-tier--platinum">
+       <div class="sponsor-tier__glow"></div>
+       <div class="sponsor-tier__head">
+         <span class="tier-diamond tier-diamond--lg"><i></i><i></i><i></i><i></i></span>
+         <span class="sponsor-tier__label">Platinum</span>
+         <span class="sponsor-tier__rule"></span>
+       </div>
+       <div class="sponsor-tier__body"><div class="sponsor-logo"><img …></div></div>
+     </div>
+   ========================================================================== */
+
+:root {
+  /* neutrals */
+  --tier-black:   #262930;  /* cool steel-grey — platinum's own metallic feel, kept dark */
+  --tier-black-2: #15171b;  /* deep cool near-black, mid stop */
+  --tier-black-3: #1d2126;  /* cool graphite, end stop */
+  --tier-plate:   rgba(255, 255, 255, .94); /* logo plate — keeps colour logos legible */
+
+  /* gold ramp (one hue family, light -> dark) */
+  --gold-100: #fff9ea;  /* table facet / highlight */
+  --gold-200: #f9f0d9;
+  --gold-400: #d9b978;  /* the "true" gold */
+  --gold-600: #8a6f31;  /* shadowed gold */
+  --gold-700: #87672c;  /* label ink on champagne */
+
+  /* platinum ramp — trial swap for the diamond mark, cool silver instead of gold */
+  --plat-100: #f5f6f8;
+  --plat-400: #b9bec6;
+  --plat-600: #6d7482;
+
+  /* champagne — gold tier surface */
+  --champ-100: #f7edd8;
+  --champ-200: #efe1c3;
+  --champ-300: #e9dab8;
+  --champ-edge: rgba(186, 153, 90, .35);
+  --champ-rich: #e3c183;   /* deeper amber the surface slowly drifts through */
+
+  /* glows / veils */
+  --gold-glow:     rgba(233, 205, 148, .22);
+  --gold-edge:     rgba(206, 172, 105, .35);
+  --sheen:         rgba(255, 240, 205, .14);
+
+  /* geometry */
+  --tier-radius: 16px;
+  --tier-label-track: .42em;
+}
+
+/* --- shared ------------------------------------------------------------- */
+
+.sponsor-tier { position: relative; overflow: hidden; margin-top: 1.1rem; }
+
+.sponsor-tier__head {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  margin-bottom: 24px;
+}
+.sponsor-tier__label {
+  font: 500 13px/1 var(--font-mono);
+  letter-spacing: var(--tier-label-track);
+  text-transform: uppercase;
+}
+.sponsor-tier__rule { width: 74px; height: 1px; }
+
+.sponsor-tier__body { position: relative; display: grid; gap: 10px; }
+.sponsor-logo {
+  display: grid; place-items: center;
+  min-height: 112px;
+  border-radius: 10px;
+}
+.sponsor-logo img { max-width: 64%; max-height: 84px; object-fit: contain; }
+
+/* ==========================================================================
+   PLATINUM — black base, gold radial key light, 45° diamond lattice,
+   travelling sheen, gilt hairline edge.
+   ========================================================================== */
+
+.sponsor-tier--platinum {
+  border-radius: var(--tier-radius);
+  padding: 28px;
+  color: var(--gold-200);
+  /* Sponsors page is public and gets many concurrent phones; skip layout/paint
+     work (including the sheen animation below) entirely while this card is
+     scrolled out of view, instead of every viewer's device rendering it nonstop. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 520px;
+  /* big, faceted crystal planes (not a tiled lattice) sitting under the key
+     light — a few large wedges, very low contrast, so logos stay legible.
+     Two clusters, mirrored across the card's diagonal (top-left / bottom-right). */
+  background:
+    conic-gradient(from 210deg at 28% 15%,
+      rgba(255, 255, 255, .07) 0deg, transparent 30deg,
+      transparent 75deg, rgba(255, 255, 255, .05) 100deg,
+      transparent 145deg, transparent 210deg,
+      rgba(255, 255, 255, .08) 240deg, transparent 275deg,
+      transparent 360deg),
+    conic-gradient(from 30deg at 84% 73.5%,
+      rgba(255, 255, 255, .07) 0deg, transparent 30deg,
+      transparent 75deg, rgba(255, 255, 255, .05) 100deg,
+      transparent 145deg, transparent 210deg,
+      rgba(255, 255, 255, .08) 240deg, transparent 275deg,
+      transparent 360deg),
+    linear-gradient(165deg, rgba(38, 41, 48, .88) 0%, rgba(21, 23, 27, .88) 45%, rgba(15, 15, 17, .88) 78%, rgba(29, 33, 38, .88) 100%);
+  box-shadow:
+    0 20px 44px -24px rgba(0, 0, 0, .6),
+    0 0 0 1px var(--gold-edge);
+}
+
+.sponsor-tier--platinum > .sponsor-tier__glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(70% 50% at 50% -5%, var(--gold-glow), transparent 70%);
+}
+
+/* travelling sheen — the "shining" */
+.sponsor-tier--platinum::after {
+  content: "";
+  position: absolute; top: 0; left: 0;
+  width: 26%; height: 100%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent, var(--sheen) 50%, transparent);
+  animation: tier-sheen 8s ease-in-out infinite;
+  /* Promote to its own compositor layer so each frame is a cheap GPU
+     translate of a pre-rasterized strip, instead of repainting the card's
+     conic-gradient facets underneath it 60 times a second. */
+  will-change: transform;
+}
+/* Percentages here are relative to the sheen's own width (26% of the card), not
+   the card's width — -130%/415% is what actually clears each edge by a small,
+   even margin (~8% of card width) on both sides. */
+@keyframes tier-sheen {
+  0%   { transform: translateX(-130%); }
+  50%  { transform: translateX(415%);  }
+  100% { transform: translateX(-130%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sponsor-tier--platinum::after { animation: none; opacity: .5; }
+}
+
+/* gold gradient text for the tier name */
+.sponsor-tier--platinum .sponsor-tier__label {
+  /* platinum-golden progressive — silver at the start, gold by the end */
+  background: linear-gradient(92deg, var(--plat-100) 0%, var(--plat-400) 28%, var(--gold-400) 62%, var(--gold-200) 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+}
+.sponsor-tier--platinum .sponsor-tier__rule {
+  background: linear-gradient(90deg, transparent, rgba(226, 196, 132, .8), transparent);
+}
+/* ==========================================================================
+   DIAMOND MARK — pure CSS faceted brilliant, no SVG.
+   <span class="tier-diamond"><i></i><i></i><i></i><i></i></span>
+   ========================================================================== */
+
+.tier-diamond {
+  position: relative;
+  display: inline-block;
+  width: 24px; aspect-ratio: 24 / 22;
+  filter: drop-shadow(0 0 7px rgba(226, 196, 132, .55));
+}
+.tier-diamond > i { position: absolute; inset: 0; }
+.tier-diamond > i:nth-child(1) { /* body        */ clip-path: polygon(50% 100%, 0 34%, 20% 0, 80% 0, 100% 34%); background: linear-gradient(160deg, var(--plat-100), var(--plat-400) 50%, var(--plat-600)); }
+.tier-diamond > i:nth-child(2) { /* table       */ clip-path: polygon(20% 0, 80% 0, 68% 34%, 32% 34%);          background: linear-gradient(180deg, rgba(255, 255, 255, .82), rgba(255, 255, 255, .30)); }
+.tier-diamond > i:nth-child(3) { /* pavilion hi */ clip-path: polygon(32% 34%, 68% 34%, 50% 100%);              background: linear-gradient(180deg, rgba(255, 252, 242, .62), rgba(255, 252, 242, 0)); }
+.tier-diamond > i:nth-child(4) { /* pavilion lo */ clip-path: polygon(0 34%, 32% 34%, 50% 100%);                background: rgba(40, 44, 50, .24); }
+.tier-diamond--lg { width: 44px; filter: drop-shadow(0 0 16px rgba(226, 196, 132, .5)); }
+
+/* ==========================================================================
+   GOLD — champagne surface that slowly deepens toward a richer amber and
+   back. No diamond, no travelling sheen — Platinum's shine moves fast and
+   local, Gold's warmth breathes slowly across the whole card instead.
+   ========================================================================== */
+
+.sponsor-tier--gold {
+  border-radius: 14px;
+  padding: 28px 34px 30px;
+  isolation: isolate; /* contains ::before's negative z-index to just this card */
+  background:
+    radial-gradient(85% 220% at 8% 0%, rgba(255, 255, 255, .9) 0%, rgba(255, 255, 255, .5) 30%, transparent 70%),
+    radial-gradient(85% 220% at 92% 0%, rgba(255, 255, 255, .9) 0%, rgba(255, 255, 255, .5) 30%, transparent 70%);
+  box-shadow: 0 0 0 1px var(--champ-edge), 0 14px 30px -20px rgba(154, 124, 57, .5);
+  /* Sponsors page is public and gets many concurrent phones; skip layout/paint
+     work (including the sweep below) entirely while this card is scrolled
+     out of view, instead of every viewer's device rendering it nonstop. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
+}
+/* slow amber "breathing" sweep, behind the two static highlight layers above.
+   A transform-only translate of an oversized gradient strip — cheap GPU
+   compositing — instead of animating background-position, which forces a
+   full repaint of the gradient every frame on every viewer's phone. */
+.sponsor-tier--gold::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 240%; height: 100%;
+  z-index: -1;
+  background: linear-gradient(160deg, var(--champ-100) 0%, var(--champ-rich) 45%, var(--champ-200) 70%, var(--champ-300) 100%);
+  animation: gold-warm 20s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes gold-warm {
+  0%, 100% { transform: translateX(0%); }
+  50%      { transform: translateX(-58.333%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sponsor-tier--gold::before { animation: none; }
+}
+/* flowing luxury wave lines — smooth S-curves instead of a circle arc,
+   gold stroke fading in/out at both ends. */
+.sponsor-tier--gold .sponsor-tier__waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sponsor-tier--gold .sponsor-tier__head  { gap: 10px; margin-bottom: 16px; }
+.sponsor-tier--gold .sponsor-tier__label {
+  position: relative;
+  font-size: 11.5px;
+  letter-spacing: .36em;
+  background: linear-gradient(92deg, var(--gold-700), var(--gold-400) 50%, var(--gold-700));
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+}
+.sponsor-tier--gold .sponsor-tier__rule  {
+  width: 52px;
+  background: linear-gradient(90deg, transparent, rgba(135, 103, 44, .55), transparent);
+}
+.sponsor-tier--gold .sponsor-logo        { min-height: 67px; width: 100%; }
+.sponsor-tier--gold .sponsor-logo img    { width: 45%; max-width: 45%; height: auto; max-height: none; }
+.sponsor-tier--gold .sponsor-tier__body  { grid-template-columns: 1fr; justify-items: center; }
+
+/* --- Other: same shared header/body shape as Platinum/Gold, no tier styling
+   at all — the plainest of the three on purpose. --- */
+.sponsor-tier--other {
+  border-radius: 14px;
+  padding: 14px 26px 16px;
+  /* soft brushed-silver gradient with a faint sheen — still the plainest
+     tier (no curve, no glow motif), just not a flat fill anymore. */
+  background:
+    linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, .8) 50%, transparent 65%),
+    linear-gradient(160deg, #f5f6f8 0%, #e9ebee 55%, #dde0e5 100%);
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .5) inset;
+}
+.sponsor-tier--other .sponsor-tier__head  { gap: 10px; margin-bottom: 16px; }
+.sponsor-tier--other .sponsor-tier__label { font-size: 11.5px; letter-spacing: .3em; color: var(--ink-soft); }
+.sponsor-tier--other .sponsor-tier__rule  { width: 52px; background: var(--line); }
+.sponsor-tier--other .sponsor-logo        { min-height: 67px; }
+.sponsor-tier--other .sponsor-logo img    { max-width: 28.5%; max-height: 39.1px; }
+
+.terminal-box {
+  margin-top: 0.9rem;
+  padding: 1rem 1.1rem;
+  background: #eef3ee;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.terminal-box__line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.terminal-box__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink);
+  background: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.terminal-box__icons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+.terminal-box__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+}
+.terminal-box__icon-btn:hover {
+  background: rgba(0, 0, 0, 0.07);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+.terminal-box__icon-btn.is-copied {
+  background: rgba(111, 207, 122, 0.3);
+  border-color: #3ea052;
+}
+.terminal-box__icon-img {
+  width: 15px;
+  height: 15px;
+}
+
+/* Embedded venue map. Full content width — it used to be a hardcoded inline
+   width: 75%, which left only ~200px of actual map on a narrow phone. */
+.venue-map {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 4px;
+  margin: 0.9rem 0 0;
+}
+
+/* --- question classification chips (My Questions tab, secondary action) --- */
+.classify-row {
+  margin-top: 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.classify-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 0.78rem;
+  min-height: 44px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.classify-chip.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* --- category tag shown on the moderator board --- */
+.feed-card__category {
+  display: inline-block;
+  margin: 0.4rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+/* --- public session chat: floating button + bottom sheet --- */
+.chat-fab {
+  position: fixed;
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(47, 45, 45, 0.24);
+  transition: transform 0.1s ease;
+}
+.chat-fab:active {
+  transform: scale(0.94);
+}
+.chat-fab svg {
+  width: 22px;
+  height: 22px;
+}
+.chat-fab__badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-fab__badge[hidden] {
+  display: none;
+}
+
+.chat-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(47, 45, 45, 0.35);
+}
+.chat-scrim[hidden] {
+  display: none;
+}
+/* The full-screen sheet covers the scrim entirely on phones, so it would just
+   be an unreachable overlay — only the desktop panel needs a backdrop. */
+@media (max-width: 639px) {
+  .chat-scrim {
+    display: none;
+  }
+}
+
+/* Full-screen on phones: the on-screen keyboard eats a bottom sheet, and
+   100dvh (unlike 100vh) shrinks when the keyboard opens, so the composer
+   stays put instead of being pushed off-screen. */
+.chat-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg);
+  animation: sheet-up 0.22s ease-out;
+}
+.chat-sheet[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-sheet { animation: none; }
+}
+@keyframes sheet-up {
+  from { transform: translateY(14px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+/* On a desktop viewport there is no keyboard overlay, so keep it a panel. */
+@media (min-width: 640px) {
+  .chat-sheet {
+    inset: auto;
+    right: 1rem;
+    bottom: 1rem;
+    height: auto;
+    max-height: 78vh;
+    width: 380px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 -6px 24px rgba(47, 45, 45, 0.2);
+  }
+}
+
+.chat-sheet__header {
+  /* must not shrink past its content, or the close button gets clipped away;
+     the max-height:340px rule below trims it for genuinely tiny viewports */
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+/* Without min-width:0 the nowrap scope line below expands this flex child and
+   pushes the close button off the right edge of the screen. */
+.chat-sheet__header > div {
+  min-width: 0;
+}
+
+.chat-sheet__title {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+.chat-sheet__scope {
+  margin: 0.2rem 0 0;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  /* a long paper title must not eat three lines of a short screen */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-close {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* basis 0, not auto: a long thread must not use its content height as the
+     flex basis, or it overflows the column and squeezes the composer */
+  flex: 1 1 0;
+  min-height: 0; /* lets the list actually scroll inside a fixed-height column */
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+/* With an empty thread, let the empty-state own the space instead of the list. */
+.chat-sheet:has(.chat-empty:not([hidden])) .chat-list {
+  flex: 0 0 auto;
+}
+
+.chat-msg {
+  max-width: 85%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  align-self: flex-start;
+}
+.chat-msg.is-mine {
+  align-self: flex-end;
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+}
+.chat-msg__image {
+  display: block;
+  /* cap both axes so a portrait photo doesn't swallow the whole thread —
+     tapping opens the full-size image anyway */
+  width: auto;
+  height: auto;
+  max-width: 220px;
+  max-height: 240px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  margin-bottom: 0.35rem;
+  background: var(--accent-soft);
+}
+
+/* attach control + pending preview inside the composer */
+/* Takes whatever the composer group has left after the preview and Send.
+   Sizing lives here rather than on the textarea, because an explicit height on
+   a flex item defeats shrinking — that is what pushed Send off small screens. */
+.chat-compose-row {
+  flex: 1 1 auto;
+  min-height: 2.75rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.chat-attach {
+  flex: 0 0 auto;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--accent);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+.chat-attach svg {
+  width: 20px;
+  height: 20px;
+}
+.chat-attach:active {
+  background: var(--accent-soft);
+}
+
+.chat-pending {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+.chat-pending[hidden] {
+  display: none;
+}
+.chat-pending img {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.chat-pending button {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.45rem 0.6rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.chat-msg__text {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap; /* keep the line breaks people typed */
+}
+.chat-msg__meta {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+}
+
+.chat-empty {
+  flex: 1 1 0;
+  min-height: 0; /* must yield space to the composer on short viewports */
+  overflow: hidden;
+  margin: 0;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+.chat-empty[hidden] {
+  display: none;
+}
+
+/* Composer owns the bottom third so there's real room to type.
+   Sized in dvh so it shrinks with the on-screen keyboard rather than
+   pushing the send button off-screen. */
+/* Content-sized, not a rigid box: an attached preview or an open keyboard must
+   never push Send out of reach. The one-third target lives on the typing area
+   below, so the composer shrinks gracefully instead of overflowing. */
+.chat-form {
+  /* The composer group (text frame + Send) targets one third of the screen.
+     It shrinks on a short keyboard-open viewport so Send is never pushed off,
+     but never below its own content — squeezing past that made it spill over
+     the notice line underneath. */
+  height: 33vh;
+  height: 33dvh;
+  flex: 0 1 auto;
+  min-height: min-content;
+  max-height: 70dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1.1rem 0.5rem;
+  border-top: 1px solid var(--line);
+}
+.chat-input {
+  flex: 1 1 auto;   /* width within the row; height comes from the row */
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  resize: none;
+}
+.chat-send {
+  flex: 0 0 auto;
+  align-self: stretch;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+}
+.chat-send:active {
+  transform: scale(0.98);
+}
+@media (min-width: 640px) {
+  /* Desktop panel is short; a third of the viewport would swallow it. */
+  .chat-form {
+    height: auto;
+  }
+  .chat-compose-row {
+    min-height: 76px;
+  }
+}
+
+/* Small phone with a big keyboard up: trim the chrome so the composer and Send
+   still fit rather than being pushed off the bottom. */
+@media (max-height: 340px) {
+  .chat-sheet__header {
+    padding: 0.5rem 1.1rem 0.45rem;
+  }
+  .chat-sheet__title {
+    font-size: 1rem;
+  }
+  .chat-sheet__scope {
+    display: none;
+  }
+  .chat-form {
+    padding-top: 0.5rem;
+  }
+  .chat-notice {
+    font-size: 0.66rem;
+    padding-bottom: calc(0.4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.chat-notice {
+  flex: 0 0 auto;
+  margin: 0;
+  /* keep clear of the iPhone home indicator */
+  padding: 0 1.1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+/* --- ConfCue ✦ answer block (My Questions tab) --- */
+.ai-answer {
+  margin-top: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 2px solid var(--ai);
+  background: var(--ai-soft);
+  border-radius: 0 3px 3px 0;
+}
+.ai-answer__badge {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ai);
+}
+.ai-answer__text {
+  margin: 0.3rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.ai-answer__citation {
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+/* --- extra top clearance for pages carrying the fixed nav-fold button --- */
+.stage--with-nav {
+  padding-top: 4.5rem;
+}
+
+/* --- schedule page --- */
+.day-accordion {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  margin-top: 1.25rem;
+  overflow: hidden;
+}
+.day-accordion:first-of-type {
+  margin-top: 1.5rem;
+}
+
+.day-accordion__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem var(--card-pad);
+  background: transparent;
+  border: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.day-accordion__eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.day-accordion__date {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  line-height: 1.2;
+  color: var(--ink-soft);
+}
+
+.day-accordion__chevron {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+}
+.day-accordion__header[aria-expanded="true"] .day-accordion__chevron {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .day-accordion__chevron { transition: none; }
+}
+
+.day-accordion__panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .day-accordion__panel { transition: none; }
+}
+
+.day-accordion__panel-inner {
+  padding: 0 var(--card-pad) var(--card-pad);
+}
+
+.schedule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.session-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.9rem var(--card-pad) 1rem;
+}
+
+.session-card__time {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.session-card__topic {
+  margin: 0.3rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.session-card__presenter {
+  margin: 0.25rem 0 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+.session-card__presenter a {
+  color: var(--ink-soft);
+  text-decoration-color: var(--line);
+}
+.session-card__presenter a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.session-card__doi {
+  display: inline-block;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.session-card__doi:hover {
+  border-color: var(--accent);
+}
+
+/* ==========================================================================
+   NARROW PHONES (<= 360px) — iPhone SE / mini, older/compact Androids.
+   Last in the file so it wins without !important.
+
+   Only genuinely step-shaped changes belong here. The main narrow-screen
+   problem was compounding inset (at 320px a session title sat behind gutter +
+   accordion padding + card padding = ~61px of chrome per side, leaving under
+   200px of text column) — that is handled continuously by the --gutter /
+   --card-pad / --stub-pad / --heading-size ramps in :root, not by this block,
+   so there is no width at which a wider phone shows a narrower text column.
+   ========================================================================== */
+@media (max-width: 360px) {
+  :root {
+    --section-gap: 1.75rem;
+  }
+
+  /* Vertical padding only — the horizontal side is already handled fluidly by
+     --card-pad / --stub-pad, which ramp with the viewport instead of stepping. */
+  .stub-card {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  /* 6 reaction stamps can't fit one row at 44px minimum tap size, and the
+     default wrap left a ragged 4 + 2. An explicit 3-wide grid makes the two
+     rows read as intentional and keeps every target full size. */
+  .stamp-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .stamp {
+    min-width: 0;
+  }
+}

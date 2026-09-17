@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact — ConfCue</title>
+<link rel="icon" type="image/svg+xml" href="/icon/dbp26.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="stage stage--board stage--with-nav stage--white-bg">
+  <nav class="nav-fold">
+    <button type="button" class="nav-fold__toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="7" x2="20" y2="7"></line>
+        <line x1="4" y1="12" x2="20" y2="12"></line>
+        <line x1="4" y1="17" x2="20" y2="17"></line>
+      </svg>
+    </button>
+    <div class="nav-fold__panel" id="navPanel">
+      <ul class="nav-fold__list">
+        <li><a href="/" class="nav-fold__link">Chat</a></li>
+        <li><a href="/schedule.html" class="nav-fold__link">Schedule</a></li>
+        <li><a href="/sponsors.html" class="nav-fold__link">Sponsors &amp; Partners</a></li>
+        <li><a href="/venues.html" class="nav-fold__link">Venues</a></li>
+        <li><a href="/contact.html" class="nav-fold__link is-current">Contact</a></li>
+        <li><a href="/myquestions.html" class="nav-fold__link">My Questions</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="board-header">
+    <div>
+      <p class="stub-eyebrow">ConfCue</p>
+      <h1 class="board-title">Contact</h1>
+    </div>
+  </header>
+
+  <section class="board-feed" aria-labelledby="contactHeading">
+    <h2 id="contactHeading" class="board-feed__heading">Reach the team</h2>
+    <ul class="schedule-list">
+      <li class="session-card">
+        <p class="session-card__time">GENERAL</p>
+        <p class="session-card__topic">General questions</p>
+        <p class="session-card__presenter"><a href="mailto:hello@confcue-demo.org">hello@confcue-demo.org</a></p>
+      </li>
+      <li class="session-card">
+        <p class="session-card__time">ON-SITE</p>
+        <p class="session-card__topic">Technical support during the event</p>
+        <p class="session-card__presenter"><a href="mailto:support@confcue-demo.org">support@confcue-demo.org</a></p>
+      </li>
+      <li class="session-card">
+        <p class="session-card__time">PROGRAM</p>
+        <p class="session-card__topic">Program committee</p>
+        <p class="session-card__presenter"><a href="mailto:program@confcue-demo.org">program@confcue-demo.org</a></p>
+      </li>
+    </ul>
+    <p class="feed-empty">Placeholder addresses for now — swap in the real ones before the event.</p>
+  </section>
+
+  <section class="board-feed" aria-labelledby="organizersHeading">
+    <h2 id="organizersHeading" class="board-feed__heading">Organized by</h2>
+    <ul class="org-logo-list">
+      <li class="org-logo-list__item org-logo-list__item--90"><img src="/icon/org/org_1_final.png" alt="TUM"></li>
+      <li class="org-logo-list__item org-logo-list__item--110"><img src="/icon/org/org_2_final.png" alt="EUnet4DBP"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_3_final.png" alt="OGC"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_4_final.png" alt="University of Auckland"></li>
+      <li class="org-logo-list__item"><img src="/icon/org/org_5_final.png" alt="DigiB"></li>
+    </ul>
+  </section>
+
+  <script src="/nav.js"></script>
+  <footer class="site-footer">
+    <img src="/icon/dbp26-full.svg" alt="DBP '26" class="site-footer__logo">
+  </footer>
+
+</body>
+</html>

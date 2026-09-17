@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moderator board — ConfCue</title>
+<link rel="icon" type="image/svg+xml" href="/icon/dbp26.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="stage stage--board stage--wide">
+  <header class="board-header">
+    <div>
+      <p class="stub-eyebrow">ConfCue</p>
+      <h1 class="board-title">Moderator Board</h1>
+    </div>
+    <p class="board-live"><span class="pulse-dot"></span><span>live</span></p>
+  </header>
+
+  <section class="board-summary" aria-labelledby="summaryHeading">
+    <h2 id="summaryHeading" class="board-summary__heading">On the floor</h2>
+    <p id="summaryText" class="board-summary__text">Listening for questions…</p>
+    <div class="board-stamps" id="boardStamps"></div>
+  </section>
+
+  <section class="board-feed" aria-labelledby="feedHeading">
+    <h2 id="feedHeading" class="board-feed__heading">Questions</h2>
+    <div id="feedList" class="feed-groups"></div>
+    <p id="feedEmpty" class="feed-empty">No questions yet — the first one lands here.</p>
+  </section>
+
+  <section class="board-feed" aria-labelledby="chatFeedHeading">
+    <h2 id="chatFeedHeading" class="board-feed__heading">Chat</h2>
+    <div id="chatFeedList" class="feed-groups"></div>
+    <p id="chatFeedEmpty" class="feed-empty">No chat messages yet.</p>
+  </section>
+
+  <script>
+    const feedList = document.getElementById("feedList");
+    const feedEmpty = document.getElementById("feedEmpty");
+    const summaryText = document.getElementById("summaryText");
+
+    // --- shared grouped/foldable feed rendering ---
+    // Both the Questions feed (grouped by category) and the Chat panel
+    // (grouped by session) use this: a <details> per group so a moderator on
+    // their own phone can fold away what they don't need to see right now,
+    // with the fold state kept in localStorage so it survives the 4s poll
+    // rebuild (a plain innerHTML rebuild would otherwise reset every group
+    // open on every poll) and across reloads.
+    function readCollapsedSet(storageKey, defaultCollapsed) {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw === null) return new Set(defaultCollapsed || []);
+        return new Set(JSON.parse(raw));
+      } catch (err) {
+        return new Set(defaultCollapsed || []);
+      }
+    }
+
+    function writeCollapsedSet(storageKey, set) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify([...set]));
+      } catch (err) {
+        // Non-critical: fold state just won't persist across reloads.
+      }
+    }
+
+    function renderGroupedFeed({ container, emptyEl, items, groupOrder, groupKeyFn, groupLabelFn, storageKey, defaultCollapsed, buildCard }) {
+      emptyEl.hidden = items.length > 0;
+      container.innerHTML = "";
+      if (items.length === 0) return;
+
+      const collapsed = readCollapsedSet(storageKey, defaultCollapsed);
+
+      const groups = new Map();
+      items.forEach((item) => {
+        const key = groupKeyFn(item);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+      });
+
+      // Known groups first, in the given priority/recency order; anything
+      // unexpected (e.g. old data with a category no longer in use) still
+      // gets its own group at the end rather than silently disappearing.
+      const known = groupOrder.filter((key) => groups.has(key));
+      const rest = [...groups.keys()].filter((key) => !groupOrder.includes(key));
+
+      [...known, ...rest].forEach((key) => {
+        const groupItems = groups.get(key);
+        const details = document.createElement("details");
+        details.className = "feed-group";
+        details.open = !collapsed.has(key);
+
+        const summary = document.createElement("summary");
+        summary.className = "feed-group__summary";
+
+        const label = document.createElement("span");
+        label.className = "feed-group__label";
+        label.textContent = groupLabelFn ? groupLabelFn(key) : key;
+
+        const count = document.createElement("span");
+        count.className = "feed-group__count";
+        count.textContent = groupItems.length;
+
+        summary.append(label, count);
+        details.appendChild(summary);
+
+        const list = document.createElement("ul");
+        list.className = "feed-list";
+        groupItems.forEach((item) => list.appendChild(buildCard(item)));
+        details.appendChild(list);
+
+        details.addEventListener("toggle", () => {
+          if (details.open) collapsed.delete(key);
+          else collapsed.add(key);
+          writeCollapsedSet(storageKey, collapsed);
+        });
+
+        container.appendChild(details);
+      });
+    }
+
+    // "Just Curious" starts folded — mirrors the moderator's documented
+    // triage habit of skipping past it to prioritize "To Moderator".
+    const QUESTION_CATEGORY_ORDER = ["To Moderator", "Check Paper", "Just Curious", "Uncategorized"];
+    const QUESTION_DEFAULT_COLLAPSED = ["Just Curious"];
+    const QUESTION_COLLAPSE_KEY = "confcue_mod_collapsed_q_categories";
+
+    function buildQuestionCard(item) {
+      const li = document.createElement("li");
+      li.className = "feed-card";
+
+      const ticket = document.createElement("p");
+      ticket.className = "feed-card__ticket";
+      ticket.textContent = `#${String(item.id).padStart(2, "0")}`;
+
+      const text = document.createElement("p");
+      text.className = "feed-card__text";
+      text.textContent = item.text;
+
+      li.append(ticket, text);
+
+      if (item.category) {
+        const category = document.createElement("p");
+        category.className = "feed-card__category";
+        category.textContent = item.category;
+        li.appendChild(category);
+      }
+
+      const del = document.createElement("button");
+      del.className = "feed-card__delete";
+      del.type = "button";
+      del.dataset.id = item.id;
+      del.textContent = "Delete";
+      li.appendChild(del);
+
+      return li;
+    }
+
+    async function pollQuestions() {
+      try {
+        const res = await fetch("/questions");
+        if (!res.ok) throw new Error("bad response");
+        const items = await res.json();
+
+        renderGroupedFeed({
+          container: feedList,
+          emptyEl: feedEmpty,
+          items: [...items].reverse(),
+          groupOrder: QUESTION_CATEGORY_ORDER,
+          groupKeyFn: (item) => item.category || "Uncategorized",
+          storageKey: QUESTION_COLLAPSE_KEY,
+          defaultCollapsed: QUESTION_DEFAULT_COLLAPSED,
+          buildCard: buildQuestionCard,
+        });
+      } catch (err) {
+        // Leave the last known feed on screen; a transient poll failure isn't worth alarming the board.
+      }
+    }
+
+    // --- moderator delete ---
+    // Event delegation on the stable parent: pollQuestions() rebuilds feedList
+    // via innerHTML every 4s, so a listener on the button itself would be
+    // destroyed on the very next poll.
+    const MOD_KEY_STORAGE = "confcue_moderator_key";
+
+    feedList.addEventListener("click", async (event) => {
+      const button = event.target.closest(".feed-card__delete");
+      if (!button) return;
+      const id = button.dataset.id;
+      if (!window.confirm(`Delete question #${id}? This can't be undone.`)) return;
+
+      let key = localStorage.getItem(MOD_KEY_STORAGE);
+      if (!key) {
+        key = window.prompt("Moderator key:");
+        if (!key) return;
+        localStorage.setItem(MOD_KEY_STORAGE, key);
+      }
+
+      try {
+        const res = await fetch(`/questions/${id}`, {
+          method: "DELETE",
+          headers: { "X-Moderator-Key": key },
+        });
+        if (res.status === 401) {
+          localStorage.removeItem(MOD_KEY_STORAGE);
+          window.alert("Moderator key rejected — try again.");
+          return;
+        }
+        if (!res.ok) throw new Error("delete failed");
+        button.closest(".feed-card").remove();
+      } catch (err) {
+        window.alert("Couldn't delete — check your connection and try again.");
+      }
+    });
+
+    // --- chat moderation ---
+    const chatFeedList = document.getElementById("chatFeedList");
+    const chatFeedEmpty = document.getElementById("chatFeedEmpty");
+
+    const CHAT_COLLAPSE_KEY = "confcue_mod_collapsed_chat_sessions";
+
+    // session_key -> {session_shortname, ...}, so chat groups can show a real
+    // name instead of the raw key ("lobby" has no entry and just falls back
+    // to itself, which is already a fine label). Refreshed periodically, not
+    // on every 4s poll — the program essentially doesn't change mid-event.
+    let sessionDirectory = {};
+
+    async function loadSessionDirectory() {
+      try {
+        const res = await fetch("/sessions.json");
+        if (!res.ok) throw new Error("bad response");
+        const sessions = await res.json();
+        sessionDirectory = Object.fromEntries(sessions.map((s) => [s.session_key, s]));
+      } catch (err) {
+        // Directory unavailable — chat groups just fall back to the raw session_key.
+      }
+    }
+
+    function chatGroupLabel(key) {
+      const session = sessionDirectory[key];
+      return session ? session.session_shortname : key;
+    }
+
+    function buildChatCard(item) {
+      const li = document.createElement("li");
+      li.className = "feed-card chat-mod-card";
+
+      if (item.image_url) {
+        const link = document.createElement("a");
+        link.href = item.image_url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+
+        const img = document.createElement("img");
+        img.className = "chat-mod-card__image";
+        img.src = item.image_url;
+        img.alt = "Photo shared in the session chat";
+        img.loading = "lazy";
+
+        link.appendChild(img);
+        li.appendChild(link);
+      }
+
+      if (item.text) {
+        const text = document.createElement("p");
+        text.className = "chat-mod-card__text";
+        text.textContent = item.text;
+        li.appendChild(text);
+      }
+
+      const meta = document.createElement("p");
+      meta.className = "chat-mod-card__meta";
+      const when = new Date(item.created_at);
+      meta.textContent = when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      li.appendChild(meta);
+
+      const del = document.createElement("button");
+      del.className = "chat-mod-delete";
+      del.type = "button";
+      del.dataset.id = item.id;
+      del.textContent = "Delete";
+      li.appendChild(del);
+
+      return li;
+    }
+
+    async function pollChatMod() {
+      try {
+        const res = await fetch("/messages/recent?limit=100");
+        if (!res.ok) throw new Error("bad response");
+        const items = await res.json();
+
+        // Groups ordered by each session's first appearance in this
+        // newest-first list — the most recently active session sits on top.
+        const sessionOrder = [...new Set(items.map((item) => item.session_key))];
+
+        renderGroupedFeed({
+          container: chatFeedList,
+          emptyEl: chatFeedEmpty,
+          items,
+          groupOrder: sessionOrder,
+          groupKeyFn: (item) => item.session_key,
+          groupLabelFn: chatGroupLabel,
+          storageKey: CHAT_COLLAPSE_KEY,
+          defaultCollapsed: [],
+          buildCard: buildChatCard,
+        });
+      } catch (err) {
+        // Leave the last known chat feed on screen; a transient poll failure isn't worth alarming the board.
+      }
+    }
+
+    // Same event-delegation reasoning as the question feed: pollChatMod()
+    // rebuilds chatFeedList via innerHTML every poll, so a listener on the
+    // button itself would be destroyed on the next cycle. Shares the same
+    // stored moderator key as question deletion — one key gates both.
+    chatFeedList.addEventListener("click", async (event) => {
+      const button = event.target.closest(".chat-mod-delete");
+      if (!button) return;
+      const id = button.dataset.id;
+      if (!window.confirm("Delete this chat message? This can't be undone.")) return;
+
+      let key = localStorage.getItem(MOD_KEY_STORAGE);
+      if (!key) {
+        key = window.prompt("Moderator key:");
+        if (!key) return;
+        localStorage.setItem(MOD_KEY_STORAGE, key);
+      }
+
+      try {
+        const res = await fetch(`/messages/${id}`, {
+          method: "DELETE",
+          headers: { "X-Moderator-Key": key },
+        });
+        if (res.status === 401) {
+          localStorage.removeItem(MOD_KEY_STORAGE);
+          window.alert("Moderator key rejected — try again.");
+          return;
+        }
+        if (!res.ok) throw new Error("delete failed");
+        button.closest(".chat-mod-card").remove();
+      } catch (err) {
+        window.alert("Couldn't delete — check your connection and try again.");
+      }
+    });
+
+    async function pollSummary() {
+      try {
+        const res = await fetch("/summary");
+        if (!res.ok) throw new Error("bad response");
+        const data = await res.json();
+        summaryText.textContent = data.summary;
+      } catch (err) {
+        // Leave the last known summary on screen.
+      }
+    }
+
+    const boardStamps = document.getElementById("boardStamps");
+
+    async function pollReactions() {
+      try {
+        const res = await fetch("/reactions");
+        if (!res.ok) throw new Error("bad response");
+        const data = await res.json();
+        const peak = Math.max(0, ...Object.values(data.recent));
+
+        boardStamps.innerHTML = "";
+        data.emojis.forEach((emoji) => {
+          const n = data.recent[emoji] || 0;
+          const chip = document.createElement("div");
+          chip.className = "board-stamp" + (n > 0 && n === peak ? " is-hot" : "");
+
+          const face = document.createElement("span");
+          face.className = "board-stamp__emoji";
+          face.textContent = emoji;
+
+          const count = document.createElement("span");
+          count.className = "board-stamp__count";
+          count.textContent = n;
+
+          chip.append(face, count);
+          boardStamps.appendChild(chip);
+        });
+      } catch (err) {
+        // Leave the last known stamps on screen.
+      }
+    }
+
+    function poll() {
+      pollQuestions();
+      pollChatMod();
+      pollSummary();
+      pollReactions();
+    }
+
+    loadSessionDirectory();
+    setInterval(loadSessionDirectory, 60000);
+
+    poll();
+    setInterval(poll, 4000);
+  </script>
+  <footer class="site-footer">
+    <img src="/icon/dbp26-full.svg" alt="DBP '26" class="site-footer__logo">
+  </footer>
+
+</body>
+</html>
